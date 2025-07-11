@@ -7,23 +7,51 @@
 
 static unsigned int CompileShader(unsigned int type, const std::string& source)
 {
-	unsigned int id = glCreateShader(GL_VERTEX_SHADER);
+	unsigned int id = glCreateShader(type);
 	const char* src = source.c_str(); //&source[0]
 	glShaderSource(id, 1, &src, nullptr);
 	glCompileShader(id);
 
-	// TODO: we don't have any error handling for the shader source
+	// Query shader that is compiled to see if anything is wrong
+	int result;
+	glGetShaderiv(id, GL_COMPILE_STATUS, &result); // i means int, v means vector
+	if (result == GL_FALSE)
+	{
+		// Get the length of the error message
+		int length;
+		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+		//alloca is a C function that lets you allocate on the stack dynamically
+		char* message = (char*)alloca(length * sizeof(char));
+		glGetShaderInfoLog(id, length, &length, message);
+		type == GL_VERTEX_SHADER ? "vertex" : "fragment";
+		std::cout << "Failed to compile " << type << " shader!" << std::endl;
+		std::cout << message << std::endl;
+
+		glDeleteShader(id);
+		return 0;
+	}
 
 	return id;
 }
 
 /* Takes in actual source code for these */
-static int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
+static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
 {
 	unsigned int program = glCreateProgram();
 	unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
 	unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
 
+	// Documentation is available on these
+	glAttachShader(program, vs);
+	glAttachShader(program, fs);
+	glLinkProgram(program);
+	glValidateProgram(program);
+
+	// delete intermediate (obj files) since they've been linked
+	glDeleteShader(vs);
+	glDeleteShader(fs);
+
+	return program;
 }
 
 int main()
@@ -64,6 +92,27 @@ int main()
 	// Tell OpenGL what kind/how much data we're giving it
 	glEnableVertexAttribArray(0); //order of enabling and having the pointer doesn't matter because it's a state machine (as long as buffer bound)
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);// only specifying one attribute so only need to call this once
+	std::string vertexShader =
+		"#version 330 core\n"
+		"\n"
+		"layout(location=0) in vec4 position;\n"
+		"\n"
+		"void main()\n"
+		"{\n"
+		"    gl_Position = position;\n"
+		"}\n";
+
+	std::string fragmentShader =
+		"#version 330 core\n"
+		"\n"
+		"layout(location=0) out vec4 color;\n"
+		"\n"
+		"void main()\n"
+		"{\n"
+		"    color=vec4(1.0, 0.0, 0.0, 1.0);\n"
+		"}\n";
+	unsigned int shader = CreateShader(vertexShader, fragmentShader);
+	glUseProgram(shader);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -82,7 +131,7 @@ int main()
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-
+	glDeleteProgram(shader);
 	glfwTerminate();
 	return 0;
 
