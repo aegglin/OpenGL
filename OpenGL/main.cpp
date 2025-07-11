@@ -5,6 +5,27 @@
 
 #include <iostream>
 
+static unsigned int CompileShader(unsigned int type, const std::string& source)
+{
+	unsigned int id = glCreateShader(GL_VERTEX_SHADER);
+	const char* src = source.c_str(); //&source[0]
+	glShaderSource(id, 1, &src, nullptr);
+	glCompileShader(id);
+
+	// TODO: we don't have any error handling for the shader source
+
+	return id;
+}
+
+/* Takes in actual source code for these */
+static int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
+{
+	unsigned int program = glCreateProgram();
+	unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
+	unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+
+}
+
 int main()
 {
 	GLFWwindow* window;
@@ -43,9 +64,6 @@ int main()
 	// Tell OpenGL what kind/how much data we're giving it
 	glEnableVertexAttribArray(0); //order of enabling and having the pointer doesn't matter because it's a state machine (as long as buffer bound)
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);// only specifying one attribute so only need to call this once
-
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	while (!glfwWindowShouldClose(window))
 	{
