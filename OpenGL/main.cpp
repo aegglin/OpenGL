@@ -30,8 +30,8 @@ int main()
 
 	float positionsBuffer[6] = {
 		-0.5f, -0.5f,
-		 0.5f, -0.5f,
-		 0.0f,  0.5f
+		 0.0f,  0.5f,
+		 0.5f, -0.5f
 	};
 	// the buffer writes into this unsigned int's memory
 	unsigned int buffer;
@@ -40,7 +40,12 @@ int main()
 	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positionsBuffer, GL_STATIC_DRAW); // STATIC_DRAW is a hint as to how many times this will be used
 	// OpenGL is a state machine so it's gradually learning more about our data
 
+	// Tell OpenGL what kind/how much data we're giving it
+	glEnableVertexAttribArray(0); //order of enabling and having the pointer doesn't matter because it's a state machine (as long as buffer bound)
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);// only specifying one attribute so only need to call this once
 
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	while (!glfwWindowShouldClose(window))
 	{
