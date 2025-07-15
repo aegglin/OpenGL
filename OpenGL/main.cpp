@@ -121,21 +121,35 @@ int main()
 
 	std::cout << glGetString(GL_VERSION) << std::endl;
 
-	float positionsBuffer[6] = {
+	float positionsBuffer[] = {
 		-0.5f, -0.5f,
-		 0.0f,  0.5f,
-		 0.5f, -0.5f
+		 0.5f,  -0.5f,
+		 0.5f, 0.5f,
+		 -0.5f, 0.5f,
 	};
+
+	// These are the indices from positionsBuffer that we want (instead of repeating the duplicate vertices). Must be unsigned
+	unsigned int indexBuffer[] = {
+		0, 1, 2,
+		2, 3, 0
+	};
+
 	// the buffer writes into this unsigned int's memory
-	unsigned int buffer;
-	glGenBuffers(1, &buffer); // only want one buffer
-	glBindBuffer(GL_ARRAY_BUFFER, buffer); //select which buffer and what kind (array buffer)
-	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positionsBuffer, GL_STATIC_DRAW); // STATIC_DRAW is a hint as to how many times this will be used
+	unsigned int bufferSlot;
+	glGenBuffers(1, &bufferSlot); // only want one buffer
+	glBindBuffer(GL_ARRAY_BUFFER, bufferSlot); //select which buffer and what kind (array buffer)
+	glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positionsBuffer, GL_STATIC_DRAW); // STATIC_DRAW is a hint as to how many times this will be used
 	// OpenGL is a state machine so it's gradually learning more about our data
 
 	// Tell OpenGL what kind/how much data we're giving it
 	glEnableVertexAttribArray(0); //order of enabling and having the pointer doesn't matter because it's a state machine (as long as buffer bound)
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);// only specifying one attribute so only need to call this once
+
+	// Send data to the GPU with this data
+	unsigned int indexBufferSlot;
+	glGenBuffers(1, &indexBufferSlot); // only want one buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferSlot); //select which buffer and what kind (array buffer)
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * 2 * sizeof(float), indexBuffer, GL_STATIC_DRAW);
 
 	ShaderProgramSource source = ParseShader("../res/shaders/Basic.shader");
 
@@ -154,7 +168,10 @@ int main()
 		glEnd();*/
 
 		//Draws the buffer that's currently bound
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		//glDrawArrays(GL_TRIANGLES, 0, 6); // only when no index buffer
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+		// Vertex buffer, index buffer, GL_DRAW_ELEMENTS is the key
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
