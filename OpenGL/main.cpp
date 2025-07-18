@@ -8,7 +8,7 @@
 #include <string>
 #include <sstream>
 
-#define ASSERT(x) if (!(x)) __debugbreak(); //__debugbreak is MSVC intrinsic (different for other compilers)
+#define ASSERT(x) if (!(x)) __debugbreak() //__debugbreak is MSVC intrinsic (different for other compilers)
 
 #define GLCall(x) GLClearError();x;ASSERT(GLLogCall(#x,__FILE__,__LINE__)) //file and line are not compiler intrinsic (should be supported by all compilers)
 
@@ -108,7 +108,7 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
 /* Takes in actual source code for these */
 static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
 {
-	unsigned int program = glCreateProgram();
+	GLCall(unsigned int program = glCreateProgram());
 	unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
 	unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
 
@@ -139,6 +139,9 @@ int main()
 	}
 
 	glfwMakeContextCurrent(window);
+
+	// Change the frame rate 
+	glfwSwapInterval(1);
 
 	// This must be called after the GLFW context is created
 	if (glewInit() != GLEW_OK)
@@ -181,7 +184,17 @@ int main()
 	ShaderProgramSource source = ParseShader("../res/shaders/Basic.shader");
 
 	unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
+	//binds the shader so it knows which one to send data to
 	GLCall(glUseProgram(shader));
+
+	//note that uniforms are set per color
+	//retrieve location of u_Color and then define it to write to color
+	GLCall(int location = glGetUniformLocation(shader, "u_Color"));
+	ASSERT(location != -1);
+	GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f)); // allows us to move code from shader to C++
+	
+	float r = 0.0f;
+	float increment = 0.05f;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -196,9 +209,18 @@ int main()
 
 		//Draws the buffer that's currently bound
 		//glDrawArrays(GL_TRIANGLES, 0, 6); // only when no index buffer
-		GLClearError();
-		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr));
+		
+		GLCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f)); // allows us to move code from shader to C++
+
+		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 		// Vertex buffer, index buffer, GL_DRAW_ELEMENTS is the key
+
+		if (r > 1.0f)
+			increment = -0.05f;
+		else if (r < 0.0f)
+			increment = 0.05f;
+
+		r += increment;
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
