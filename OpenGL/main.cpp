@@ -132,6 +132,11 @@ int main()
 	if (!glfwInit())
 		return -1;
 
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // core means that you have to explicitly use vertex array objects. compatibility has a default one
+
+
 	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
 	if (!window) {
 		glfwTerminate();
@@ -164,11 +169,16 @@ int main()
 		2, 3, 0
 	};
 
+	// when you specify the vertex attrib pointer, it binds the vertex array to the data (in fewer steps)
+	unsigned int vertexArray;
+	GLCall(glGenVertexArrays(1, &vertexArray));
+	GLCall(glBindVertexArray(vertexArray)); // no target here
+
 	// the buffer writes into this unsigned int's memory
 	unsigned int bufferSlot;
 	GLCall(glGenBuffers(1, &bufferSlot)); // only want one buffer
 	GLCall(glBindBuffer(GL_ARRAY_BUFFER, bufferSlot)); //select which buffer and what kind (array buffer)
-	GLCall(glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positionsBuffer, GL_STATIC_DRAW)); // STATIC_DRAW is a hint as to how many times this will be used
+	GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positionsBuffer, GL_STATIC_DRAW)); // STATIC_DRAW is a hint as to how many times this will be used
 	// OpenGL is a state machine so it's gradually learning more about our data
 
 	// Tell OpenGL what kind/how much data we're giving it
@@ -193,6 +203,12 @@ int main()
 	ASSERT(location != -1);
 	GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f)); // allows us to move code from shader to C++
 	
+	// Unbind what we just bound so other things can be bound
+	GLCall(glBindVertexArray(0));
+	GLCall(glUseProgram(0));
+	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
 	float r = 0.0f;
 	float increment = 0.05f;
 
@@ -210,8 +226,22 @@ int main()
 		//Draws the buffer that's currently bound
 		//glDrawArrays(GL_TRIANGLES, 0, 6); // only when no index buffer
 		
+		// Bind shader and set up uniform
+		GLCall(glUseProgram(shader));
 		GLCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f)); // allows us to move code from shader to C++
 
+		// Bind vertex buffer
+		//GLCall(glBindBuffer(GL_ARRAY_BUFFER, bufferSlot));
+		//GLCall(glEnableVertexAttribArray(0));
+		//// Specify layout for vertex buffer. Vertex arrays would take care of this step and the above step of binding the vertex buffer
+		//GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));
+
+		GLCall(glBindVertexArray(vertexArray)); // when doing it like this, the vertex buffer isn't bound
+
+		// Bind index buffer
+		GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferSlot));
+
+		// Call glDrawElements
 		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 		// Vertex buffer, index buffer, GL_DRAW_ELEMENTS is the key
 
