@@ -11,6 +11,7 @@
 #include "Renderer.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "VertexArray.h"
 
 struct ShaderProgramSource
 {
@@ -147,18 +148,13 @@ int main()
 			2, 3, 0
 		};
 
-		// when you specify the vertex attrib pointer, it binds the vertex array to the data (in fewer steps)
-		unsigned int vertexArray;
-		GLCall(glGenVertexArrays(1, &vertexArray));
-		GLCall(glBindVertexArray(vertexArray)); // no target here
-
 
 		VertexArray va;
 		VertexBuffer vb(positionsBuffer, 4 * 2 * sizeof(float));
 
-		BufferLayout layout;
-		layout.Push<float>(3);
-		va.AddLayout(layout);
+		VertexBufferLayout layout;
+		layout.Push<float>(2);
+		va.AddBuffer(vb, layout);
 
 		VertexBuffer vertexBuffer(positionsBuffer, 4 * 2 * sizeof(float));
 
@@ -182,7 +178,7 @@ int main()
 		GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f)); // allows us to move code from shader to C++
 
 		// Unbind what we just bound so other things can be bound
-		GLCall(glBindVertexArray(0));
+		va.Unbind();
 		GLCall(glUseProgram(0));
 		GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
 		GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
@@ -213,8 +209,6 @@ int main()
 			//GLCall(glEnableVertexAttribArray(0));
 			//// Specify layout for vertex buffer. Vertex arrays would take care of this step and the above step of binding the vertex buffer
 			//GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));
-
-			GLCall(glBindVertexArray(vertexArray)); // when doing it like this, the vertex buffer isn't bound
 
 			// Bind index buffer
 			va.Bind();
