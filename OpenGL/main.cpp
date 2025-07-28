@@ -152,6 +152,14 @@ int main()
 		GLCall(glGenVertexArrays(1, &vertexArray));
 		GLCall(glBindVertexArray(vertexArray)); // no target here
 
+
+		VertexArray va;
+		VertexBuffer vb(positionsBuffer, 4 * 2 * sizeof(float));
+
+		BufferLayout layout;
+		layout.Push<float>(3);
+		va.AddLayout(layout);
+
 		VertexBuffer vertexBuffer(positionsBuffer, 4 * 2 * sizeof(float));
 
 		// Tell OpenGL what kind/how much data we're giving it
@@ -209,6 +217,7 @@ int main()
 			GLCall(glBindVertexArray(vertexArray)); // when doing it like this, the vertex buffer isn't bound
 
 			// Bind index buffer
+			va.Bind();
 			indexBuffer.Bind();
 
 			// Call glDrawElements
