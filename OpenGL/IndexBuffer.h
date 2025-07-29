@@ -11,5 +11,5 @@ public:
 	void Bind() const;
 	void Unbind() const;
 
-	inline unsigned int const getIndexCount() { return indexCount; };
+	inline unsigned int getIndexCount() const { return indexCount; };
 };

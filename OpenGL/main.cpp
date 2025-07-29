@@ -10,6 +10,7 @@
 
 #include "Renderer.h"
 #include "VertexBuffer.h"
+#include "VertexBufferLayout.h"
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
@@ -68,10 +69,6 @@ int main()
 
 		VertexBuffer vertexBuffer(positionsBuffer, 4 * 2 * sizeof(float));
 
-		// Tell OpenGL what kind/how much data we're giving it
-		GLCall(glEnableVertexAttribArray(0)); //order of enabling and having the pointer doesn't matter because it's a state machine (as long as buffer bound)
-		GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));// only specifying one attribute so only need to call this once
-
 		IndexBuffer indexBuffer(indices, 6);
 
 		Shader shader("../res/shaders/Basic.shader");
@@ -87,9 +84,11 @@ int main()
 		float r = 0.0f;
 		float increment = 0.05f;
 
+		Renderer renderer;
+
 		while (!glfwWindowShouldClose(window))
 		{
-			GLCall(glClear(GL_COLOR_BUFFER_BIT));
+			renderer.Clear();
 
 			//Draw using immediate mode with OpenGL 1.1 (no GLEW needed)
 			/*glBegin(GL_TRIANGLES);
@@ -101,23 +100,10 @@ int main()
 			//Draws the buffer that's currently bound
 			//glDrawArrays(GL_TRIANGLES, 0, 6); // only when no index buffer
 
-			// Bind shader and set up uniform
+			// Bind shader and set up uniform, done each frame
 			shader.Bind();
 			shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f); // allows us to move code from shader to C++
-
-			// Bind vertex buffer
-			//GLCall(glBindBuffer(GL_ARRAY_BUFFER, bufferSlot));
-			//GLCall(glEnableVertexAttribArray(0));
-			//// Specify layout for vertex buffer. Vertex arrays would take care of this step and the above step of binding the vertex buffer
-			//GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));
-
-			// Bind index buffer
-			va.Bind();
-			indexBuffer.Bind();
-
-			// Call glDrawElements
-			GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
-			// Vertex buffer, index buffer, GL_DRAW_ELEMENTS is the key
+			renderer.Draw(va, indexBuffer,shader);
 
 			if (r > 1.0f)
 				increment = -0.05f;

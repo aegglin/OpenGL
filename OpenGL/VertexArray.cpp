@@ -1,12 +1,11 @@
 #include "VertexArray.h"
 #include "Renderer.h"
+#include "VertexBufferLayout.h"
 
 VertexArray::VertexArray()
 {
-
 	// when you specify the vertex attrib pointer, it binds the vertex array to the data (in fewer steps)
 	GLCall(glGenVertexArrays(1, &rendererID));
-
 }
 
 VertexArray::~VertexArray()
