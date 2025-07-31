@@ -14,6 +14,7 @@
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "Texture.h"
 
 int main()
 {
@@ -47,10 +48,10 @@ int main()
 	std::cout << glGetString(GL_VERSION) << std::endl;
 	{
 		float positionsBuffer[] = {
-			-0.5f, -0.5f,
-			 0.5f,  -0.5f,
-			 0.5f, 0.5f,
-			 -0.5f, 0.5f,
+			-0.5f, -0.5f, 0.0f, 0.0f,
+			 0.5f,  -0.5f, 1.0f, 0.0f,
+			 0.5f, 0.5f, 1.0f, 1.0f,
+			 -0.5f, 0.5f, 0.0f, 1.0f
 		};
 
 		// These are the indices from positionsBuffer that we want (instead of repeating the duplicate vertices). Must be unsigned
@@ -59,11 +60,14 @@ int main()
 			2, 3, 0
 		};
 
+		GLCall(glEnable(GL_BLEND));
+		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
 		VertexArray va;
-		VertexBuffer vb(positionsBuffer, 4 * 2 * sizeof(float));
+		VertexBuffer vb(positionsBuffer, 4 * 4 * sizeof(float));
 
 		VertexBufferLayout layout;
+		layout.Push<float>(2);
 		layout.Push<float>(2);
 		va.AddBuffer(vb, layout);
 
@@ -74,6 +78,11 @@ int main()
 		Shader shader("../res/shaders/Basic.shader");
 		shader.Bind();
 		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
+
+
+		Texture texture("../res/textures/beetle.png");
+		texture.Bind();
+		shader.SetUniform1i("u_Texture", 0);
 
 		// Unbind what we just bound so other things can be bound
 		va.Unbind();

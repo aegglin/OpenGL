@@ -16,7 +16,7 @@ private:
 	//caching for uniforms
 	std::unordered_map<std::string, int> uniformLocationCache;
 
-	unsigned int GetUniformLocation(const std::string& name);
+	int GetUniformLocation(const std::string& name);
 	bool CompileShader();
 public:
 	Shader(const std::string& filePath);
@@ -33,4 +33,5 @@ public:
 	// Set uniforms
 	void SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
 	void SetUniform1f(const std::string& name, float value);
+	void SetUniform1i(const std::string& name, int value);
 };
