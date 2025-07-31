@@ -16,6 +16,9 @@
 #include "Shader.h"
 #include "Texture.h"
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
 int main()
 {
 	GLFWwindow* window;
@@ -28,7 +31,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // core means that you have to explicitly use vertex array objects. compatibility has a default one
 
 
-	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+	window = glfwCreateWindow(960, 540, "Hello World", NULL, NULL);
 	if (!window) {
 		glfwTerminate();
 		return -1;
@@ -47,11 +50,12 @@ int main()
 
 	std::cout << glGetString(GL_VERSION) << std::endl;
 	{
+		// this is where the vertices' coordinates are
 		float positionsBuffer[] = {
-			-0.5f, -0.5f, 0.0f, 0.0f,
-			 0.5f,  -0.5f, 1.0f, 0.0f,
-			 0.5f, 0.5f, 1.0f, 1.0f,
-			 -0.5f, 0.5f, 0.0f, 1.0f
+			100.0f, 100.0f, 0.0f, 0.0f,
+			200.0f, 100.0f, 1.0f, 0.0f,
+			200.0f, 200.0f, 1.0f, 1.0f,
+			100.0f, 200.0f, 0.0f, 1.0f
 		};
 
 		// These are the indices from positionsBuffer that we want (instead of repeating the duplicate vertices). Must be unsigned
@@ -60,7 +64,10 @@ int main()
 			2, 3, 0
 		};
 
+		// Add blending -- when we render something that is partially/fully transparent, how is that done? 
+		// blending determines how we combine output color with what is already in target buffer
 		GLCall(glEnable(GL_BLEND));
+		// specifies how we blend two colors together
 		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
 		VertexArray va;
@@ -71,14 +78,17 @@ int main()
 		layout.Push<float>(2);
 		va.AddBuffer(vb, layout);
 
-		VertexBuffer vertexBuffer(positionsBuffer, 4 * 2 * sizeof(float));
-
 		IndexBuffer indexBuffer(indices, 6);
+
+		// order in ortho is left, right, top, bottom, near, far (near and far are the Z-axis)
+		// these are the bounds on our window (if vertex position was > the max they wouldn't appear)
+		// projection matrix converts into (-1, 1) range
+		glm::mat4 projectionMatrix = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);// othrographic matrix that is basically 4 x 3
 
 		Shader shader("../res/shaders/Basic.shader");
 		shader.Bind();
 		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
-
+		shader.SetUniformMat4f("u_ModelViewProjectionMatrix", projectionMatrix);
 
 		Texture texture("../res/textures/beetle.png");
 		texture.Bind();
@@ -111,7 +121,7 @@ int main()
 
 			// Bind shader and set up uniform, done each frame
 			shader.Bind();
-			shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f); // allows us to move code from shader to C++
+			//shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f); // allows us to move code from shader to C++
 			renderer.Draw(va, indexBuffer,shader);
 
 			if (r > 1.0f)

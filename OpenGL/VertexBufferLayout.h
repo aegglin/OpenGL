@@ -15,6 +15,7 @@ struct VertexBufferElement
 
 	static unsigned int GetSizeOfType(unsigned int type)
 	{
+		// get the number of bytes in a type
 		switch (type)
 		{
 			case GL_FLOAT:			return 4;
