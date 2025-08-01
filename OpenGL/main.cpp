@@ -54,11 +54,12 @@ int main()
 	std::cout << glGetString(GL_VERSION) << std::endl;
 	{
 		// this is where the vertices' coordinates are
+		// the second two on each line are texture coordinates
 		float vertexPositionsBuffer[] = {
-			100.0f, 100.0f, 0.0f, 0.0f,
-			200.0f, 100.0f, 1.0f, 0.0f,
-			200.0f, 200.0f, 1.0f, 1.0f,
-			100.0f, 200.0f, 0.0f, 1.0f
+			-50.0f, -50.0f, 0.0f, 0.0f,
+			 50.0f, -50.0f, 1.0f, 0.0f,
+			 50.0f,  50.0f, 1.0f, 1.0f,
+			-50.0f,  50.0f, 0.0f, 1.0f
 		};
 
 		// These are the indices from positionsBuffer that we want (instead of repeating the duplicate vertices). Must be unsigned
@@ -88,12 +89,11 @@ int main()
 		// projection matrix converts into (-1, 1) range
 		glm::mat4 projectionMatrix = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);// othrographic matrix that is basically 4 x 3
 		// view matrix is/handles the camera -> basically moving the scene 100 units to the left to simulate moving the camera to the right
-		glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
+		glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
 		
 
 		Shader shader("../res/shaders/Basic.shader");
 		shader.Bind();
-		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
 
 		Texture texture("../res/textures/beetle.png");
 		texture.Bind();
@@ -111,7 +111,8 @@ int main()
 		ImGui_ImplGlfwGL3_Init(window, true);
 		ImGui::StyleColorsDark();
 
-		glm::vec3 translation(200, 200, 0);
+		glm::vec3 translationA(200, 200, 0);
+		glm::vec3 translationB(400, 200, 0);
 
 		while (!glfwWindowShouldClose(window))
 		{
@@ -119,11 +120,6 @@ int main()
 
 			// Need this before any ImGui calls
 			ImGui_ImplGlfwGL3_NewFrame();
-
-			// the model matrix is the object itself -- move up and to the right
-			glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), translation);
-			// this is the MVP (reverese order b/c it's column major) -> camera * transform of object * projection to normalize to -1 to 1
-			glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
 
 			//Draw using immediate mode with OpenGL 1.1 (no GLEW needed)
 			/*glBegin(GL_TRIANGLES);
@@ -135,14 +131,29 @@ int main()
 			//Draws the buffer that's currently bound
 			//glDrawArrays(GL_TRIANGLES, 0, 6); // only when no index buffer
 
-			// Bind shader and set up uniform, done each frame
-			shader.Bind();
-			shader.SetUniformMat4f("u_ModelViewProjectionMatrix", modelViewProjectionMatrix);
-
-			renderer.Draw(va, indexBuffer,shader);
+			// Bind shader, set up uniform, and add matrices for each instance of our image, done each frame
+			{
+				// the model matrix is the object itself -- move up and to the right
+				glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), translationA);
+				// this is the MVP (reverese order b/c it's column major) -> camera * transform of object * projection to normalize to -1 to 1
+				glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
+				shader.Bind();
+				shader.SetUniformMat4f("u_ModelViewProjectionMatrix", modelViewProjectionMatrix);
+				renderer.Draw(va, indexBuffer, shader);
+			}
+			{
+				// the model matrix is the object itself -- move up and to the right
+				glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), translationB);
+				// this is the MVP (reverese order b/c it's column major) -> camera * transform of object * projection to normalize to -1 to 1
+				glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
+				shader.Bind();
+				shader.SetUniformMat4f("u_ModelViewProjectionMatrix", modelViewProjectionMatrix);
+				renderer.Draw(va, indexBuffer, shader);
+			}
 
 			{
-				ImGui::SliderFloat3("Translation", &translation.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
+				ImGui::SliderFloat3("Translation A", &translationA.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
+				ImGui::SliderFloat3("Translation B", &translationB.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
 				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			}
 			
