@@ -1,0 +1,8 @@
+OpenGL.sln
+OpenGL/Debug/
+OpenGL/OpenGL.vcxproj*
+OpenGL/imgui.ini
+OpenGL/x64/
+x64/
+.vs/
+Debug/
