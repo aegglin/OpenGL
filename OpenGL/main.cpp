@@ -19,6 +19,9 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw_gl3.h"
+
 int main()
 {
 	GLFWwindow* window;
@@ -51,7 +54,7 @@ int main()
 	std::cout << glGetString(GL_VERSION) << std::endl;
 	{
 		// this is where the vertices' coordinates are
-		float positionsBuffer[] = {
+		float vertexPositionsBuffer[] = {
 			100.0f, 100.0f, 0.0f, 0.0f,
 			200.0f, 100.0f, 1.0f, 0.0f,
 			200.0f, 200.0f, 1.0f, 1.0f,
@@ -71,7 +74,7 @@ int main()
 		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
 		VertexArray va;
-		VertexBuffer vb(positionsBuffer, 4 * 4 * sizeof(float));
+		VertexBuffer vb(vertexPositionsBuffer, 4 * 4 * sizeof(float));
 
 		VertexBufferLayout layout;
 		layout.Push<float>(2);
@@ -84,11 +87,13 @@ int main()
 		// these are the bounds on our window (if vertex position was > the max they wouldn't appear)
 		// projection matrix converts into (-1, 1) range
 		glm::mat4 projectionMatrix = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);// othrographic matrix that is basically 4 x 3
+		// view matrix is/handles the camera -> basically moving the scene 100 units to the left to simulate moving the camera to the right
+		glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
+		
 
 		Shader shader("../res/shaders/Basic.shader");
 		shader.Bind();
 		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
-		shader.SetUniformMat4f("u_ModelViewProjectionMatrix", projectionMatrix);
 
 		Texture texture("../res/textures/beetle.png");
 		texture.Bind();
@@ -100,14 +105,25 @@ int main()
 		indexBuffer.Unbind();
 		shader.Unbind();
 
-		float r = 0.0f;
-		float increment = 0.05f;
-
 		Renderer renderer;
+		
+		ImGui::CreateContext();
+		ImGui_ImplGlfwGL3_Init(window, true);
+		ImGui::StyleColorsDark();
+
+		glm::vec3 translation(200, 200, 0);
 
 		while (!glfwWindowShouldClose(window))
 		{
 			renderer.Clear();
+
+			// Need this before any ImGui calls
+			ImGui_ImplGlfwGL3_NewFrame();
+
+			// the model matrix is the object itself -- move up and to the right
+			glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), translation);
+			// this is the MVP (reverese order b/c it's column major) -> camera * transform of object * projection to normalize to -1 to 1
+			glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
 
 			//Draw using immediate mode with OpenGL 1.1 (no GLEW needed)
 			/*glBegin(GL_TRIANGLES);
@@ -121,20 +137,24 @@ int main()
 
 			// Bind shader and set up uniform, done each frame
 			shader.Bind();
-			//shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f); // allows us to move code from shader to C++
+			shader.SetUniformMat4f("u_ModelViewProjectionMatrix", modelViewProjectionMatrix);
+
 			renderer.Draw(va, indexBuffer,shader);
 
-			if (r > 1.0f)
-				increment = -0.05f;
-			else if (r < 0.0f)
-				increment = 0.05f;
-
-			r += increment;
+			{
+				ImGui::SliderFloat3("Translation", &translation.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
+				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			}
+			
+			ImGui::Render();
+			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
 			glfwSwapBuffers(window);
 			glfwPollEvents();
 		}
 	}
+	ImGui_ImplGlfwGL3_Shutdown();
+	ImGui::DestroyContext();
 	glfwTerminate();
 	return 0;
 }
