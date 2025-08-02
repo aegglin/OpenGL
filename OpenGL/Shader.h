@@ -16,9 +16,9 @@ private:
 	int rendererID;
 	std::string filePath;
 	//caching for uniforms
-	std::unordered_map<std::string, int> uniformLocationCache;
+	mutable std::unordered_map<std::string, int> uniformLocationCache;
 
-	int GetUniformLocation(const std::string& name);
+	int GetUniformLocation(const std::string& name) const;
 public:
 	Shader(const std::string& filePath);
 	~Shader();
